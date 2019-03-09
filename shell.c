@@ -12,12 +12,19 @@
 
 #define TAM 100
 
+void udea_pwd();
+void udea_cd(char ** it);
+void udea_echo(char ** it, int n);
+void udea_clr();
+void udea_time();
+void udea_exit();
+
 int main ()
 {
-	const char *mypath[] = {"./", "/usr/bin/", "/bin/", NULL};
+	char *mypath[] = {"./", "/usr/bin/", "/bin/", NULL};
 
 	char ** items;
-	int i, num, background;
+	int num, background, status;
 	char expresion[TAM];
 
 	while(1) {
@@ -26,67 +33,99 @@ int main ()
 
 		num = separaItems (expresion, &items, &background);
 
-		printf ("Numero de parametros: %d\n", num);
-
 		// ORDENES INTERNAS //
 
 		if(strcmp(items[0], "udea-pwd") == 0)
 		{
-			char directorio[TAM];
-
-			getcwd(directorio, TAM);
-
-			printf("%s\n", directorio);
+			udea_pwd();
 		}
 
 		else if (strcmp(items[0], "udea-cd") == 0)
         {
-            chdir(items[1]);
+            udea_cd(&items[0]);
         }
 
         else if (strcmp(items[0], "udea-echo") == 0)
         {
-        	for(i = 1; i < num; i++)
-        	{	
-        		printf("%s ", items[i]);
-        	}
-        	printf("\n");
+        	udea_echo(&items[0], num);
         }
 
         else if (strcmp(items[0], "udea-clr") == 0)
         {
-        	const char *CLEAR_SCREEN_ANSI = "\e[1;1H\e[2J";
-  			write(STDOUT_FILENO, CLEAR_SCREEN_ANSI, 12);
+  			udea_clr();
+
         }
 
         else if (strcmp(items[0], "udea-time") == 0)
         {
-        	time_t rawtime;
-  			struct tm * timeinfo;
-
-  			time ( &rawtime );
-  			timeinfo = localtime ( &rawtime );
-  			printf ( "%s", asctime (timeinfo) );
+  			udea_time();
         }
 
         else if (strcmp(items[0], "udea-exit") == 0)
         {
-        	exit(0);
+        	udea_exit();
         }
 
         // FIN ORDENES INTERNAS //
 
-		/*
-		if (num>0)
-		{
-			for (i=0; i<num; i++)
-		    printf ("%d \"%s\"\n", i+1, items[i]);
+        // ORDENES EXTERNAS //
 
-		    printf ("Background: %d\n", background);
+        else if(fork() == 0)
+        {
+        	printf("Entre acá \n");
+        	execvp(items[0], mypath);
+        }else
+        {
+        	if(background == 1)
+        	{
+        		wait(&status);
+        	}
+        }
 
-		    liberaItems (items);
-		}**/
+        // FIN ORDENES EXTERNAS //
+
+        liberaItems(items);
 	}
 
 	return 0;
 }
+
+void udea_pwd(){
+
+	char directorio[TAM];
+
+	getcwd(directorio, TAM);
+
+	printf("%s\n", directorio);
+}
+
+void udea_cd(char ** it){
+	chdir(it[1]);
+}
+
+void udea_echo(char ** it, int n){
+	for(int i = 1; i < n; i++)
+    {	
+     	printf("%s ", it[i]);
+    }
+    printf("\n");
+}
+
+void udea_clr(){
+	const char *CLEAR_SCREEN_ANSI = "\e[1;1H\e[2J";
+  	write(STDOUT_FILENO, CLEAR_SCREEN_ANSI, 12);
+}
+
+void udea_time(){
+	time_t rawtime;
+  	struct tm * timeinfo;
+
+  	time ( &rawtime );
+  	timeinfo = localtime ( &rawtime );
+  	printf ( "%s", asctime (timeinfo) );
+}
+
+void udea_exit(){
+	exit(0);
+}
+
